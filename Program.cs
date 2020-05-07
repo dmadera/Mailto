@@ -9,7 +9,6 @@ namespace MailTo
 {
     class Program
     {
-
         static int Main(string[] args)
         {
             try
