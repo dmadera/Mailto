@@ -21,7 +21,13 @@
                 "publish",
                 "${workspaceFolder}/MailTo.csproj",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "-c",
+                "Release",
+                "-r",
+                "\"win-x86\"",
+                "--self-contained",
+                "true"
             ],
             "problemMatcher": "$msCompile"
         },

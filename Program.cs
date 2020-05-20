@@ -4,73 +4,93 @@ using System.Web;
 using System.Net;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
+using System.Reflection;
 
-namespace MailTo
-{
-    class Program
-    {
-        static int Main(string[] args)
-        {
-            try
-            {
-                // string file = @"c:\Users\mader\Downloads\MAILTO.TXT";
-                // string company = "pema";
+namespace MailTo {
+    class Program {
+        static int Main(string[] args) {
+            TextWriter oldOut = Console.Out;
 
-                string file = args[0];
-                string company = args[1].ToLower();
+            try {
+                string exeDir = new FileInfo(Assembly.GetEntryAssembly().Location).Directory.ToString();
+                using (var ostrm = new FileStream(exeDir + @"\\mailto.log", FileMode.Create, FileAccess.Write)) {
+                    using (var writer = new StreamWriter(ostrm)) {
+                        Console.SetOut(writer);
 
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                var lines = File.ReadAllLines(file, Encoding.GetEncoding(1250));
-                if (lines.Length < 4)
-                {
-                    throw new Exception("Špatný formát souboru mailto.txt.");
+                        if (args.Length != 2) {
+                            throw new ArgumentException("Ivalid aguments count.");
+                        }
+
+                        string file = args[0];
+                        string company = args[1].ToLower();
+
+                        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                        var lines = File.ReadAllLines(file, Encoding.GetEncoding(1250));
+                        if (lines.Length < 4) {
+                            throw new Exception("Špatný formát souboru mailto.txt.");
+                        }
+
+                        Console.WriteLine("---------------- Passed file ----------------");
+                        Console.WriteLine(string.Join(Environment.NewLine, lines));
+
+                        var mailto = new Mailto(lines, company);
+                        var mailtoUrl = string.Format(
+                            "mailto://{0}",
+                            mailto.GetMailtoUrl()
+                        );
+
+                        var process = new Process() {
+                            StartInfo = new ProcessStartInfo {
+                                FileName = "cmd.exe",
+                                Arguments = String.Format(
+                                    "/c START \"{0}\"  \"{1}\"",
+                                    "Mailto",
+                                    mailtoUrl
+                                ),
+                                UseShellExecute = true,
+                                RedirectStandardOutput = false,
+                                WindowStyle = ProcessWindowStyle.Hidden
+                            }
+                        };
+
+                        Console.WriteLine(Environment.NewLine + "---------------- Process ----------------");
+                        Console.WriteLine(process.StartInfo.ToString());
+                        process.Start();
+                    }
                 }
-
-                var mailto = new Mailto(lines, company);
-                var mailtoUrl = string.Format(
-                    "mailto:\"{0}\"",
-                    mailto.GetMailtoUrl()
-                );
-                Console.WriteLine(mailtoUrl);
-
-                System.Diagnostics.Process.Start("cmd", @"/c start " + mailtoUrl);
                 return 0;
-            }
-            catch (Exception e)
-            {
+
+            } catch (Exception e) {
                 Console.WriteLine(e.Message);
                 return -1;
+
+            } finally {
+                Console.SetOut(oldOut);
             }
         }
     }
 
-    public static class UploadFtp
-    {
+    public static class UploadFtp {
         private const string host = "pemalbc.savana-hosting.cz";
 
-        private static string getHostUrl(string company)
-        {
-            if (company == "pema")
-            {
+        private static string getHostUrl(string company) {
+            if (company == "pema") {
                 return "https://velkoobchoddrogerie.cz";
-            }
-            else if (company == "lipa")
-            {
+            } else if (company == "lipa") {
                 return "https://velkoobchodpapirem.cz";
             }
             throw new ArgumentException("Allowed values pema and lipa");
         }
 
-        private static string randomString(int length)
-        {
+        private static string randomString(int length) {
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public static string uploadFile(string localFile, string company)
-        {
+        public static string uploadFile(string localFile, string company) {
             var newFileName = string.Format(
                 "{0}-{1}{2}",
                 Path.GetFileNameWithoutExtension(localFile),
@@ -99,30 +119,25 @@ namespace MailTo
         }
     }
 
-    public class Mailto
-    {
+    public class Mailto {
         protected string receiver;
         protected string subject;
         protected string attachment;
         protected string body = "";
         protected string company;
 
-        public Mailto(string[] lines, string company)
-        {
+        public Mailto(string[] lines, string company) {
             this.company = company;
             receiver = lines[0].Trim();
             subject = lines[1].Trim();
             attachment = lines[2].Trim();
-            for (var i = 3; i < lines.Length; i++)
-            {
+            for (var i = 3; i < lines.Length; i++) {
                 body += lines[i] + Environment.NewLine;
             }
         }
 
-        public string GetMailtoUrl()
-        {
-            if (File.Exists(this.attachment))
-            {
+        public string GetMailtoUrl() {
+            if (File.Exists(this.attachment)) {
                 var url = UploadFtp.uploadFile(this.attachment, this.company);
                 this.insertAttachmentUrl(url);
             }
@@ -135,8 +150,7 @@ namespace MailTo
             );
         }
 
-        private void insertAttachmentUrl(string url)
-        {
+        private void insertAttachmentUrl(string url) {
             var body = this.body;
             this.body = body.Replace("<attachment_url>", url);
         }
