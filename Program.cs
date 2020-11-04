@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.Reflection;
+using FluentFTP;
 
 namespace MailTo {
     class Program {
@@ -18,50 +19,57 @@ namespace MailTo {
                     using (var writer = new StreamWriter(ostrm)) {
                         Console.SetOut(writer);
 
-                        if (args.Length != 2) {
-                            throw new ArgumentException("Ivalid aguments count.");
-                        }
+                        try {
 
-                        string file = args[0];
-                        string company = args[1].ToLower();
-
-                        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                        var lines = File.ReadAllLines(file, Encoding.GetEncoding(1250));
-                        if (lines.Length < 4) {
-                            throw new Exception("Špatný formát souboru mailto.txt.");
-                        }
-
-                        Console.WriteLine("---------------- Passed file ----------------");
-                        Console.WriteLine(string.Join(Environment.NewLine, lines));
-
-                        var mailto = new Mailto(lines, company);
-                        var mailtoUrl = string.Format(
-                            "mailto://{0}",
-                            mailto.GetMailtoUrl()
-                        );
-
-                        var process = new Process() {
-                            StartInfo = new ProcessStartInfo {
-                                FileName = "cmd.exe",
-                                Arguments = String.Format(
-                                    "/c START \"{0}\"  \"{1}\"",
-                                    "Mailto",
-                                    mailtoUrl
-                                ),
-                                UseShellExecute = true,
-                                RedirectStandardOutput = false,
-                                WindowStyle = ProcessWindowStyle.Hidden
+                            if (args.Length != 2) {
+                                throw new ArgumentException("Ivalid aguments count.");
                             }
-                        };
 
-                        Console.WriteLine(Environment.NewLine + "---------------- Process ----------------");
-                        Console.WriteLine(process.StartInfo.ToString());
-                        process.Start();
+                            string file = args[0];
+                            string company = args[1].ToLower();
+
+                            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                            var lines = File.ReadAllLines(file, Encoding.GetEncoding(1250));
+                            if (lines.Length < 4) {
+                                throw new Exception("Špatný formát souboru mailto.txt.");
+                            }
+
+                            Console.WriteLine("---------------- Passed file ----------------");
+                            Console.WriteLine(string.Join(Environment.NewLine, lines));
+
+                            var mailto = new Mailto(lines, company);
+                            var mailtoUrl = string.Format(
+                                "mailto://{0}",
+                                mailto.GetMailtoUrl()
+                            );
+
+                            var process = new Process() {
+                                StartInfo = new ProcessStartInfo {
+                                    FileName = "cmd.exe",
+                                    Arguments = String.Format(
+                                        "/c START \"{0}\"  \"{1}\"",
+                                        "Mailto",
+                                        mailtoUrl
+                                    ),
+                                    UseShellExecute = true,
+                                    RedirectStandardOutput = false,
+                                    WindowStyle = ProcessWindowStyle.Hidden
+                                }
+                            };
+
+                            Console.WriteLine(Environment.NewLine + "---------------- Process ----------------");
+                            Console.WriteLine(process.StartInfo.ToString());
+                            process.Start();
+
+                        } catch (Exception e) {
+                            Console.WriteLine("Error: " + e.Message + "\nPodrobnosti:" + e.ToString());
+                        }
                     }
                 }
                 return 0;
 
             } catch (Exception e) {
+                Console.SetOut(oldOut);
                 Console.WriteLine(e.Message);
                 return -1;
 
@@ -98,18 +106,16 @@ namespace MailTo {
                 Path.GetExtension(localFile)
             );
 
-            var address = string.Format(
-                "ftp://{0}/{1}",
-                UploadFtp.host,
-                newFileName
-            );
-
             string userName = company + "docs";
-            var webClient = new WebClient();
-            var credentials = new NetworkCredential(userName, Secret.get());
-
-            webClient.Credentials = credentials;
-            webClient.UploadFile(address, localFile);
+            using (var client = new FtpClient()) {
+                var serverFile = string.Format("/{0}", newFileName);
+                client.Host = UploadFtp.host;
+                client.Credentials = new NetworkCredential(userName, Secret.get());
+                client.DataConnectionType = FtpDataConnectionType.AutoActive;
+                client.Connect();
+                var status = client.UploadFile(localFile, serverFile, FtpRemoteExists.Overwrite, false, FtpVerify.Throw);
+                Console.WriteLine("\nUpload file status:" + status.ToString());
+            }
 
             return string.Format(
                 "{0}/docs/{1}",

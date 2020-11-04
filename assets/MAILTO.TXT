@@ -1,1 +1,15 @@
-blanka.soustkova@3plus1service.cz       LIPA VELKOOBCHOD PAPÍREM s.r.oc:\test.pdfDobrý den<attachment_url>Dìkujeme.S pozdravem Madìra Jiøí            LIPA VELKOOBCHOD PAPÍREM s.r.oBarvíøská 51/7b     46007 Liberec 3           www.velkoobchodpapirem.cz   485111444, 485111440   
+blanka.soustkova@3plus1service.cz       
+LIPA VELKOOBCHOD PAPï¿½REM s.r.o
+/home/dmadera/projects/mailto/assets/test.pdf
+Dobrï¿½ den
+<attachment_url>
+Dï¿½kujeme.
+
+S pozdravem Madï¿½ra Jiï¿½ï¿½            
+
+LIPA VELKOOBCHOD PAPï¿½REM s.r.o
+Barvï¿½ï¿½skï¿½ 51/7b     
+46007 Liberec 3           
+
+www.velkoobchodpapirem.cz   
+485111444, 485111440   
