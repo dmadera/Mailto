@@ -114,6 +114,7 @@ namespace MailTo {
                 client.DataConnectionType = FtpDataConnectionType.AutoActive;
                 client.Connect();
                 var status = client.UploadFile(localFile, serverFile, FtpRemoteExists.Overwrite, false, FtpVerify.Throw);
+                client.Disconnect();
                 Console.WriteLine("\nUpload file status:" + status.ToString());
             }
 
