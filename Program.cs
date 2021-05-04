@@ -111,7 +111,7 @@ namespace MailTo {
                 var serverFile = string.Format("/{0}", newFileName);
                 client.Host = UploadFtp.host;
                 client.Credentials = new NetworkCredential(userName, Secret.get());
-                client.DataConnectionType = FtpDataConnectionType.AutoActive;
+                client.DataConnectionType = FtpDataConnectionType.AutoPassive;
                 client.Connect();
                 var status = client.UploadFile(localFile, serverFile, FtpRemoteExists.Overwrite, false, FtpVerify.Throw);
                 client.Disconnect();
